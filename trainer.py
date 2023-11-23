@@ -214,12 +214,25 @@ def Feature_Clustering(image, args, pretrain_path=None, pretrain_path2=None):
     pretrain = torch.load('FEmodule_weight.pth')
 
     model_dict = model.state_dict()
-    pretrain = {k: v for k, v in pretrain.items() if k in model_dict.keys()}
+    # Filter out the pretrained weights that don't match the size of the current model's weights
+    pretrain = {k: v for k, v in pretrain.items() if
+                          k in model_dict.keys() and v.shape == model_dict[k].shape}
     model_dict.update(pretrain)
 
-    model_dict2 = model2.state_dict()
-    pretrain = {k: v for k, v in pretrain.items() if k in model_dict2.keys()}
+
+    model_dict2 = model.state_dict()
+    # Filter out the pretrained weights that don't match the size of the current model's weights
+    pretrain = {k: v for k, v in pretrain.items() if
+                          k in model_dict.keys() and v.shape == model_dict[k].shape}
     model_dict2.update(pretrain)
+
+    # model_dict = model.state_dict()
+    # pretrain = {k: v for k, v in pretrain.items() if k in model_dict.keys()}
+    # model_dict.update(pretrain)
+    #
+    # model_dict2 = model2.state_dict()
+    # pretrain = {k: v for k, v in pretrain.items() if k in model_dict2.keys()}
+    # model_dict2.update(pretrain)
 
     model.load_state_dict(model_dict)
     model2.load_state_dict(model_dict2)
@@ -353,9 +366,9 @@ def Feature_Clustering(image, args, pretrain_path=None, pretrain_path2=None):
             torch.save(model2.state_dict(), 'FC2module_weight.pth')
 
             # Assume that `output` and `output2` are your feature maps
-            np.save('output.npy', output.cpu().detach().numpy())
-            np.save('output2.npy', output2.cpu().detach().numpy())
-            np.save('outputAverage.npy', outputAverage.cpu().detach().numpy())
+            # np.save('output.npy', output.cpu().detach().numpy())
+            # np.save('output2.npy', output2.cpu().detach().numpy())
+            # np.save('outputAverage.npy', outputAverage.cpu().detach().numpy())
 
         classify = logisticRegression(output, output2, args.labels, 5)
 

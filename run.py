@@ -26,21 +26,21 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    data_image_df = pd.read_csv(args.input_file)
-    data_image_df.fillna(0, inplace=True)
-    data_image = data_image_df.values
+    # data_image_df = pd.read_csv(args.input_file)
+    # data_image_df.fillna(0, inplace=True)
+    # data_image = data_image_df.values
 
     #datasets = args.input_file
 
-    #data_image = np.loadtxt(args.input_file)
+    data_image = np.loadtxt(args.input_file)
 
     #FE_images = [np.loadtxt(dataset_path) for dataset_path in args.FE_images]
     #FE_images = np.concatenate(FE_images, axis=0)
     #print(f'Concatenated shape: {FE_images.shape}')
 
-    Dimension_Reduction(data_image, args, args.state_dict_auto_weights)
+    #Dimension_Reduction(data_image, args, args.state_dict_auto_weights)
 
-    #im_Average2target = Feature_Clustering(data_image, args, args.state_dict_FC_weights, args.state_dict_FC_weights2)
+    im_Average2target = Feature_Clustering(data_image, args, args.state_dict_FC_weights, args.state_dict_FC_weights2)
 
     #np.savetxt(args.output_file + '.txt', im_Average2target)
 
