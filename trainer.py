@@ -14,11 +14,8 @@ def Dimension_Reduction(data_image, args, pretrain_path=None):
     print('Step 1: Dimensionality Reduction ...')
     m, n = data_image.shape
 
-    # Calculate the number of batches
-    num_batches = len(data_image) // args.batch_size
-
     if args.use_umap:
-        data_umap = umap.UMAP(metric = 'cosine',n_components=3,random_state = 0).fit_transform(data_image)
+        data_umap = umap.UMAP(metric='cosine', n_components=3, random_state=0).fit_transform(data_image)
         data_umap = MinMaxScaler().fit_transform(data_umap)
         data_umap = torch.from_numpy(data_umap.astype(np.float32))
         loss_func2 = torch.nn.MSELoss()
@@ -33,75 +30,125 @@ def Dimension_Reduction(data_image, args, pretrain_path=None):
 
     model = Autoencoder(n)
 
-
-    model = Autoencoder(n)
-    if pretrain_path is not None and os.path.isfile(pretrain_path):
-        model.load_state_dict(torch.load(pretrain_path))
-        for param in model.parameters():
-            param.requires_grad = True
-
-
     # optimizer = torch.optim.SGD(autoencoder.parameters(), lr=args.lr_dr,momentum=0.9)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr_dr)
     loss_func1 = CosineLoss()
 
     with open(args.output_file + '.csv', 'w', newline='') as csvfile:
-        # Create a CSV writer
+    # Create a CSV writer
         writer = csv.writer(csvfile)
         # Write the header row
         writer.writerow(['Epoch', 'Loss'])
-
+        print('csv created')
         for epoch in range(args.epoch_dr):
-        #     if args.use_gpu == True:
-        #         model = model.cuda()
-        #
-        #     encoded, deconder = model(data_image)
-        #
-        #     if args.use_umap == True:
-        #
-        #         loss = loss_func2(encoded, data_umap) + loss_func1(deconder, data_image)
-        #
-        #     else:
-        #
-        #         loss = loss_func1(deconder, data_image)
-        #
-        #     optimizer.zero_grad()
-        #     loss.backward()
-        #     optimizer.step()
-        #     print('epoch', epoch, '| train loss:  %.4f' % loss.data.cpu().numpy())
-            for i in range(num_batches):
-                # Get the batch data
-                batch_data = data_image[i * args.batch_size:(i + 1) * args.batch_size]
-                batch_data_umap = data_umap[i * args.batch_size:(i + 1) * args.batch_size]
 
-                if args.use_gpu == True:
-                    batch_data = batch_data.cuda()
-                    batch_data_umap = batch_data_umap.cuda()
-                    model = model.cuda()
+            if args.use_gpu == True:
+                model = model.cuda()
 
-                encoded, deconder = model(batch_data)
+            encoded, deconder = model(data_image)
 
-                if args.use_umap == True:
-                    loss = loss_func2(encoded, batch_data_umap) + loss_func1(deconder, batch_data)
-                else:
-                    loss = loss_func1(deconder, batch_data)
+            if args.use_umap == True:
 
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+                loss = loss_func2(encoded, data_umap) + loss_func1(deconder, data_image)
 
-                if args.use_gpu == True:
-                    torch.cuda.empty_cache()
+            else:
 
-            # Write a row to the CSV file
+                loss = loss_func1(deconder, data_image)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
             writer.writerow([epoch, loss.data.cpu().numpy()])
 
             print('epoch', epoch, '| train loss:  %.4f' % loss.data.cpu().numpy())
+
+            encoded_np = encoded.detach().cpu().numpy()
+
+            np.save('encoded_output.npy', encoded_np)
+
 
     torch.save(model.state_dict(), 'FEmodule_weight.pth')
 
     if args.use_gpu == True:
         torch.cuda.empty_cache()
+
+    # print('Step 1: Dimensionality Reduction ...')
+    # m, n = data_image.shape
+    #
+    # # Calculate the number of batches
+    # num_batches = len(data_image) // args.batch_size
+    # print(f'number of batches {num_batches}')
+    #
+    # if args.use_umap:
+    #     data_umap = umap.UMAP(metric = 'cosine',n_components=3,random_state = 0).fit_transform(data_image)
+    #     data_umap = MinMaxScaler().fit_transform(data_umap)
+    #     data_umap = torch.from_numpy(data_umap.astype(np.float32))
+    #     loss_func2 = torch.nn.MSELoss()
+    #
+    #     if args.use_gpu == True:
+    #         data_umap = data_umap.cuda()
+    #
+    # data_image = torch.from_numpy(data_image.astype(np.float32))
+    #
+    # if args.use_gpu == True:
+    #     data_image = data_image.cuda()
+    #
+    # model = Autoencoder(n)
+    #
+    #
+    # model = Autoencoder(n)
+    # if pretrain_path is not None and os.path.isfile(pretrain_path):
+    #     model.load_state_dict(torch.load(pretrain_path))
+    #     for param in model.parameters():
+    #         param.requires_grad = True
+    #
+    #
+    # # optimizer = torch.optim.SGD(autoencoder.parameters(), lr=args.lr_dr,momentum=0.9)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr_dr)
+    # loss_func1 = CosineLoss()
+    #
+    # with open(args.output_file + '.csv', 'w', newline='') as csvfile:
+    #     # Create a CSV writer
+    #     writer = csv.writer(csvfile)
+    #     # Write the header row
+    #     writer.writerow(['Epoch', 'Loss'])
+    #     print('csv created')
+    #
+    #     for epoch in range(args.epoch_dr):
+    #         for i in range(num_batches):
+    #             # Get the batch data
+    #             batch_data = data_image[i * args.batch_size:(i + 1) * args.batch_size]
+    #             batch_data_umap = data_umap[i * args.batch_size:(i + 1) * args.batch_size]
+    #
+    #             if args.use_gpu == True:
+    #                 batch_data = batch_data.cuda()
+    #                 batch_data_umap = batch_data_umap.cuda()
+    #                 model = model.cuda()
+    #
+    #             encoded, deconder = model(batch_data)
+    #
+    #             if args.use_umap == True:
+    #                 loss = loss_func2(encoded, batch_data_umap) + loss_func1(deconder, batch_data)
+    #             else:
+    #                 loss = loss_func1(deconder, batch_data)
+    #
+    #             optimizer.zero_grad()
+    #             loss.backward()
+    #             optimizer.step()
+    #
+    #             if args.use_gpu == True:
+    #                 torch.cuda.empty_cache()
+    #
+    #         # Write a row to the CSV file
+    #         writer.writerow([epoch, loss.data.cpu().numpy()])
+    #
+    #         print('epoch', epoch, '| train loss:  %.4f' % loss.data.cpu().numpy())
+    #
+    # torch.save(model.state_dict(), 'FEmodule_weight.pth')
+    #
+    # if args.use_gpu == True:
+    #     torch.cuda.empty_cache()
 
 
 def weight_init(m):
@@ -110,70 +157,7 @@ def weight_init(m):
         nn.init.kaiming_uniform(m.weight, mode='fan_in')
         # nn.init.constant_(m.bias, 0)
 
-
-
-def logisticRegression(output, output2, csv_path, patch_size):
-    # Extract patches from the output feature maps
-    output_patches = output.unfold(1, patch_size, 1).unfold(2, patch_size, 1)
-    output2_patches = output2.unfold(1, patch_size, 1).unfold(2, patch_size, 1)
-
-    # Flatten the patches
-    output_patches_flattened = output_patches.reshape(output_patches.shape[0], -1)
-    output2_patches_flattened = output2_patches.reshape(output2_patches.shape[0], -1)
-
-    # Load the CSV file
-    df = pd.read_csv(csv_path)
-
-    # Create a dictionary where the keys are the (X, Y) coordinates and the values are the class labels
-    csv_dict = {(row['X'], row['Y']): row for _, row in df.iterrows()}
-
-    # Initialize the features and labels
-    features = []
-    labels = []
-
-
-    # For each patch
-    for y in range(0, output.shape[0] - patch_size + 1):
-        for x in range(0, output.shape[1] - patch_size + 1):
-            # Get the class labels for the corresponding region in the CSV file
-            patch_labels = [csv_dict.get((x + dx, y + dy))['class'] for dx in range(patch_size) for dy in range(patch_size) if csv_dict.get((x + dx, y + dy)) is not None]
-
-            # If there are any class labels for the corresponding region in the CSV file
-            if patch_labels:
-                # Get the most common class label in the region
-                most_common_label = stats.mode(patch_labels)[0][0]
-
-                # Add the feature vector for the pixel and the corresponding m/z values to the features
-                features.append(np.concatenate([output_patches_flattened[y * output.shape[1] + x, :], output2_patches_flattened[y * output.shape[1] + x, :], df.loc[(df['X'] == x) & (df['Y'] == y), 'm/z'].values]))
-
-                # Add the most common class label to the labels
-                labels.append(most_common_label)
-
-
-    # Encode the class labels as integers
-    le = LabelEncoder()
-    labels = le.fit_transform(labels)
-
-    # Split the features and labels into a training set and a test set
-    features_train, features_test, labels_train, labels_test = train_test_split(features, labels, test_size=0.2,
-                                                                                random_state=42)
-    # Train the logistic regression model
-    print("Training")
-    clf = LogisticRegression()
-    clf.fit(features_train, labels_train)
-
-
-    print("Predicting")
-    predicted_labels = clf.predict(features_test)
-
-    accuracy = accuracy_score(labels_test, predicted_labels)
-    print("Accuracy: " + str(accuracy))
-    c_matrix = confusion_matrix(labels_test, predicted_labels)
-    print("Confusion Matrix: " + str(c_matrix))
-
-    return clf
-
-def Feature_Clustering(image, args, pretrain_path=None, pretrain_path2=None):
+def Feature_Clustering(image, args, pretrain_path=None, pretrain_path2=None, output_file=None, input_shape=None):
     print('Step 2: Feature Clustering ...')
     m, n, k = args.input_shape
 
@@ -225,14 +209,6 @@ def Feature_Clustering(image, args, pretrain_path=None, pretrain_path2=None):
     pretrain = {k: v for k, v in pretrain.items() if
                           k in model_dict.keys() and v.shape == model_dict[k].shape}
     model_dict2.update(pretrain)
-
-    # model_dict = model.state_dict()
-    # pretrain = {k: v for k, v in pretrain.items() if k in model_dict.keys()}
-    # model_dict.update(pretrain)
-    #
-    # model_dict2 = model2.state_dict()
-    # pretrain = {k: v for k, v in pretrain.items() if k in model_dict2.keys()}
-    # model_dict2.update(pretrain)
 
     model.load_state_dict(model_dict)
     model2.load_state_dict(model_dict2)
@@ -368,8 +344,7 @@ def Feature_Clustering(image, args, pretrain_path=None, pretrain_path2=None):
             # Assume that `output` and `output2` are your feature maps
             # np.save('output.npy', output.cpu().detach().numpy())
             # np.save('output2.npy', output2.cpu().detach().numpy())
-            # np.save('outputAverage.npy', outputAverage.cpu().detach().numpy())
-
-        classify = logisticRegression(output, output2, args.labels, 5)
+            np.save(f'{args.output_file}.npy', outputAverage.cpu().detach().numpy())
+            np.save(f'{args.output_file}_cluster.npy', outputAverage.cpu().detach().numpy())
 
     return im_Average2target

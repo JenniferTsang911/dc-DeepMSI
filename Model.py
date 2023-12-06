@@ -35,6 +35,7 @@ class Autoencoder(nn.Module):
 
         )
 
+
     def forward(self, x):
         enOutputs = self.encode(x)
         outputs = self.decode(enOutputs)
